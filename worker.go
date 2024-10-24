@@ -48,6 +48,12 @@ type WorkerPool struct {
 	maxQueueLength uint32
 }
 
+// NewWorkerPool creates a new worker pool with the given options.
+//
+// By default, the worker pool will have the same number of workers as the number of CPUs.
+// The maximum queue length is set to the total number of workers multiplied by 1000.
+//
+// You can customize the worker pool by providing the options.
 func NewWorkerPool(opts ...WorkerOption) *WorkerPool {
 	pool := &WorkerPool{
 		totalWorkers:   uint32(runtime.NumCPU()),
@@ -80,6 +86,7 @@ func NewWorkerPool(opts ...WorkerOption) *WorkerPool {
 	return pool
 }
 
+// start starts the worker pool by deploying the workers to the pool.
 func (p *WorkerPool) start() {
 	p.started = true
 	idleWorkers.Set(float64(p.totalWorkers))
@@ -89,6 +96,8 @@ func (p *WorkerPool) start() {
 	}
 }
 
+// deployWorker deploys a worker to the worker pool. It listens for tasks to execute on the receiving tasks channel.
+// It decrements the wait group when the worker is done executing the tasks.
 func (p *WorkerPool) deployWorker() {
 	defer p.wg.Done()
 	for {
@@ -105,6 +114,8 @@ func (p *WorkerPool) deployWorker() {
 	}
 }
 
+// runTask runs the task. It increments the active workers and decrements the idle workers when the task is running.
+// It also updates the pending tasks metric.
 func (p *WorkerPool) runTask(task Runnable) {
 	idleWorkers.Dec()
 	activeWorkers.Inc()
@@ -122,11 +133,22 @@ func (p *WorkerPool) runTask(task Runnable) {
 	task.Run()
 }
 
+// Stop stops the worker pool.
+//
+// Note: This is a blocking operation. It will wait for all the workers to finish executing the tasks.
 func (p *WorkerPool) Stop() {
 	close(p.done)
 	p.wg.Wait()
 }
 
+// StopAsync stops the worker pool asynchronously. It will not wait for all the workers to finish executing the tasks.
+//
+// Note: This is a non-blocking operation. It will return immediately and stop the worker pool in the background.
+func (p *WorkerPool) StopAsync() {
+	go p.Stop()
+}
+
+// isDone returns true if the worker pool is stopped.
 func (p *WorkerPool) isDone() bool {
 	select {
 	case <-p.done:
@@ -136,6 +158,9 @@ func (p *WorkerPool) isDone() bool {
 	}
 }
 
+// Schedule schedules a task to be executed by the worker pool.
+//
+// Note: This is a non-blocking operation. If the worker pool is stopped, it will return an error.
 func (p *WorkerPool) Schedule(task Runnable) error {
 	if p.isDone() {
 		return ErrWorkerPoolStopped
@@ -155,6 +180,9 @@ func (p *WorkerPool) Schedule(task Runnable) error {
 	}
 }
 
+// BlockingSchedule schedules a task to be executed by the worker pool.
+//
+// Note: This is a blocking operation. If the worker pool is stopped, it will return an error.
 func (p *WorkerPool) BlockingSchedule(task Runnable) error {
 	if p.isDone() {
 		return ErrWorkerPoolStopped
