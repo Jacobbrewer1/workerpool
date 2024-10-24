@@ -65,11 +65,13 @@ func NewWorkerPool(opts ...WorkerOption) *WorkerPool {
 	if pool.totalWorkers == 0 {
 		pool.totalWorkers = runtime.NumCPU()
 	}
-	if pool.maxQueueLength == 0 {
-		pool.maxQueueLength = pool.totalWorkers * 1000
-	}
 
-	pool.tasks = make(chan Runnable, pool.maxQueueLength)
+	taskChan := make(chan Runnable, pool.maxQueueLength)
+	if pool.maxQueueLength <= 0 {
+		// The user has set the max queue length to 0, which means we should use a blocking channel (non-buffered).
+		taskChan = make(chan Runnable)
+	}
+	pool.tasks = taskChan
 
 	if !pool.delayedStart {
 		pool.start()
