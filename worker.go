@@ -26,12 +26,6 @@ type WorkerPool struct {
 	// tasks is the channel to send tasks to the worker pool.
 	tasks chan Runnable
 
-	// idleWorkers is the number of idle workers in the pool.
-	idleWorkers uint32
-
-	// activeWorkers is the number of active workers in the pool.
-	activeWorkers uint32
-
 	// delayedStart is the flag to indicate if the worker pool should start immediately.
 	//
 	// If delayedStart is set to true, the worker pool will start only when the first task is scheduled.
@@ -42,10 +36,10 @@ type WorkerPool struct {
 	started bool
 
 	// totalWorkers is the total number of workers to deploy to the pool.
-	totalWorkers uint32
+	totalWorkers int
 
 	// maxQueueLength is the maximum number of tasks that can be scheduled.
-	maxQueueLength uint32
+	maxQueueLength int
 }
 
 // NewWorkerPool creates a new worker pool with the given options.
@@ -56,12 +50,10 @@ type WorkerPool struct {
 // You can customize the worker pool by providing the options.
 func NewWorkerPool(opts ...WorkerOption) *WorkerPool {
 	pool := &WorkerPool{
-		totalWorkers:   uint32(runtime.NumCPU()),
-		maxQueueLength: uint32(runtime.NumCPU() * 1000),
+		totalWorkers:   runtime.NumCPU(),
+		maxQueueLength: runtime.NumCPU() * 1000,
 		wg:             new(sync.WaitGroup),
 		done:           make(chan struct{}),
-		idleWorkers:    0,
-		activeWorkers:  0,
 		delayedStart:   false,
 		started:        false,
 	}
@@ -71,7 +63,7 @@ func NewWorkerPool(opts ...WorkerOption) *WorkerPool {
 	}
 
 	if pool.totalWorkers == 0 {
-		pool.totalWorkers = uint32(runtime.NumCPU())
+		pool.totalWorkers = runtime.NumCPU()
 	}
 	if pool.maxQueueLength == 0 {
 		pool.maxQueueLength = pool.totalWorkers * 1000
@@ -90,7 +82,7 @@ func NewWorkerPool(opts ...WorkerOption) *WorkerPool {
 func (p *WorkerPool) start() {
 	p.started = true
 	idleWorkers.Set(float64(p.totalWorkers))
-	for i := uint32(0); i < p.totalWorkers; i++ {
+	for i := 0; i < p.totalWorkers; i++ {
 		p.wg.Add(1)
 		go p.deployWorker()
 	}
@@ -137,6 +129,21 @@ func (p *WorkerPool) runTask(task Runnable) {
 //
 // Note: This is a blocking operation. It will wait for all the workers to finish executing the tasks.
 func (p *WorkerPool) Stop() {
+	defer func() {
+		idleWorkers.Set(0)
+		activeWorkers.Set(0)
+		pendingTasks.Set(0)
+
+		p.started = false
+	}()
+
+	// Clear down the tasks channel while waiting for the workers to finish
+	go func() {
+		for range p.tasks {
+			// Drain the tasks channel to avoid deadlock
+		}
+	}()
+
 	close(p.done)
 	p.wg.Wait()
 }
