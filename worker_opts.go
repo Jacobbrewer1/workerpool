@@ -3,15 +3,23 @@ package workerpool
 type WorkerOption func(pool *WorkerPool)
 
 // WithTotalWorkers sets the total number of workers in the pool.
-func WithTotalWorkers(workers uint32) WorkerOption {
+func WithTotalWorkers(workers int) WorkerOption {
 	return func(pool *WorkerPool) {
+		if workers < 1 {
+			return
+		}
+
 		pool.totalWorkers = workers
 	}
 }
 
 // WithMaxQueueLength sets the maximum number of tasks that can be scheduled.
-func WithMaxQueueLength(length uint32) WorkerOption {
+func WithMaxQueueLength(length int) WorkerOption {
 	return func(pool *WorkerPool) {
+		if length < 1 {
+			return
+		}
+
 		pool.maxQueueLength = length
 	}
 }
