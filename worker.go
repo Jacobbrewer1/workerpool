@@ -16,6 +16,11 @@ var (
 	ErrWorkerPoolStopped = errors.New("worker pool stopped")
 )
 
+const (
+	minWorkers     = 1
+	minQueueLength = 0
+)
+
 type WorkerPool struct {
 	// wg is the wait group for the worker pool.
 	wg *sync.WaitGroup
@@ -62,13 +67,13 @@ func NewWorkerPool(opts ...WorkerOption) *WorkerPool {
 		opt(pool)
 	}
 
-	if pool.totalWorkers == 0 {
+	if pool.totalWorkers < minWorkers {
 		pool.totalWorkers = runtime.NumCPU()
 	}
 
 	taskChan := make(chan Runnable, pool.maxQueueLength)
-	if pool.maxQueueLength <= 0 {
-		// The user has set the max queue length to 0, which means we should use a blocking channel (non-buffered).
+	if pool.maxQueueLength <= minQueueLength {
+		// The user has set the max queue length to the minQueueLength (0), which means we should use a blocking channel (non-buffered).
 		taskChan = make(chan Runnable)
 	}
 	pool.tasks = taskChan
