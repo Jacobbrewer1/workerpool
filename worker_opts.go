@@ -7,7 +7,7 @@ func WithTotalWorkers(workers int) WorkerOption {
 	return func(pool *WorkerPool) {
 		// Cannot have less than 1 worker. Having 1 working is the same as running the task in the main goroutine but
 		// on a separate goroutine.
-		if workers < 1 {
+		if workers < minWorkers {
 			return
 		}
 
@@ -18,6 +18,10 @@ func WithTotalWorkers(workers int) WorkerOption {
 // WithMaxQueueLength sets the maximum number of tasks that can be scheduled.
 func WithMaxQueueLength(length int) WorkerOption {
 	return func(pool *WorkerPool) {
+		if length < minQueueLength {
+			return
+		}
+
 		pool.maxQueueLength = length
 	}
 }
