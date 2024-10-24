@@ -18,12 +18,6 @@ var (
 		Help: "Number of active workers in the worker pool",
 	})
 
-	// totalWorkers is the total number of workers in the pool.
-	totalWorkers = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "workerpool_total_workers",
-		Help: "Total number of workers in the worker pool",
-	})
-
 	// pendingTasks is the number of tasks pending in the worker pool.
 	pendingTasks = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "workerpool_pending_tasks",
