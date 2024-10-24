@@ -136,6 +136,9 @@ func (p *WorkerPool) isDone() bool {
 	}
 }
 
+// Schedule schedules a task to be executed by the worker pool.
+//
+// Note: This is a non-blocking operation. If the worker pool is stopped, it will return an error.
 func (p *WorkerPool) Schedule(task Runnable) error {
 	if p.isDone() {
 		return ErrWorkerPoolStopped
@@ -155,6 +158,9 @@ func (p *WorkerPool) Schedule(task Runnable) error {
 	}
 }
 
+// BlockingSchedule schedules a task to be executed by the worker pool.
+//
+// Note: This is a blocking operation. If the worker pool is stopped, it will return an error.
 func (p *WorkerPool) BlockingSchedule(task Runnable) error {
 	if p.isDone() {
 		return ErrWorkerPoolStopped
