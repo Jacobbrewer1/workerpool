@@ -85,8 +85,22 @@ func NewWorkerPool(opts ...WorkerOption) *WorkerPool {
 	return pool
 }
 
+// TotalWorkers gets the total number of workers in the worker pool.
+func (p *WorkerPool) TotalWorkers() int {
+	return p.totalWorkers
+}
+
+// PendingTasks gets the number of pending tasks in the worker pool.
+func (p *WorkerPool) PendingTasks() int {
+	return len(p.tasks)
+}
+
 // start starts the worker pool by deploying the workers to the pool.
 func (p *WorkerPool) start() {
+	if p.started {
+		return
+	}
+
 	p.started = true
 	idleWorkers.Set(float64(p.totalWorkers))
 	for i := 0; i < p.totalWorkers; i++ {
@@ -172,6 +186,15 @@ func (p *WorkerPool) isDone() bool {
 	}
 }
 
+// MustSchedule schedules a task to be executed by the worker pool.
+//
+// Note: This is a non-blocking operation. If the worker pool is stopped, it will panic.
+func (p *WorkerPool) MustSchedule(task Runnable) {
+	if err := p.Schedule(task); err != nil {
+		panic(err)
+	}
+}
+
 // Schedule schedules a task to be executed by the worker pool.
 //
 // Note: This is a non-blocking operation. If the worker pool is stopped, it will return an error.
@@ -200,6 +223,10 @@ func (p *WorkerPool) Schedule(task Runnable) error {
 func (p *WorkerPool) BlockingSchedule(task Runnable) error {
 	if p.isDone() {
 		return ErrWorkerPoolStopped
+	}
+
+	if p.delayedStart && !p.started {
+		p.start()
 	}
 
 	select {

@@ -33,12 +33,18 @@ func WithBlockingChannel() WorkerOption {
 	return WithMaxQueueLength(0)
 }
 
-// WithDelayedStart sets the flag to indicate if the worker pool should start immediately.
+// WithDelayedStart sets the flag to indicate that the worker pool should start only when the first task is scheduled.
 //
-// If delayedStart is set to true, the worker pool will start only when the first task is scheduled.
 // This is useful when you want to start the worker pool only when you have tasks to schedule.
-func WithDelayedStart(delayed bool) WorkerOption {
+func WithDelayedStart() WorkerOption {
 	return func(pool *WorkerPool) {
-		pool.delayedStart = delayed
+		pool.delayedStart = true
+	}
+}
+
+// WithImmediateStart sets the flag to indicate that the worker pool should start immediately.
+func WithImmediateStart() WorkerOption {
+	return func(pool *WorkerPool) {
+		pool.delayedStart = false
 	}
 }
