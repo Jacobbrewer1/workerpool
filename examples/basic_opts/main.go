@@ -53,11 +53,6 @@ func main() {
 
 	log.Println("Deployed workers:", wp.TotalWorkers())
 
-	//for {
-	//	log.Println("Queue length:", wp.PendingTasks())
-	//	time.Sleep(1 * time.Second)
-	//}
-
 	// Wait for all tasks to complete
 	wg.Wait()
 
