@@ -16,6 +16,10 @@ func WithTotalWorkers(workers int) WorkerOption {
 }
 
 // WithMaxQueueLength sets the maximum number of tasks that can be scheduled.
+//
+// Note: If the queue is full, the worker pool will return an error.
+//
+// Setting the maximum queue length will set the worker pool to use a non-buffered channel (blocking channel).
 func WithMaxQueueLength(length int) WorkerOption {
 	return func(pool *WorkerPool) {
 		if length < minQueueLength {
@@ -39,12 +43,5 @@ func WithBlockingChannel() WorkerOption {
 func WithDelayedStart() WorkerOption {
 	return func(pool *WorkerPool) {
 		pool.delayedStart = true
-	}
-}
-
-// WithImmediateStart sets the flag to indicate that the worker pool should start immediately.
-func WithImmediateStart() WorkerOption {
-	return func(pool *WorkerPool) {
-		pool.delayedStart = false
 	}
 }
