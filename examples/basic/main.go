@@ -23,7 +23,7 @@ func (t *task) Run() {
 
 func main() {
 	// Create a new worker pool
-	wp := workerpool.NewWorkerPool()
+	wp := workerpool.New()
 
 	// Schedule some tasks
 	wg := new(sync.WaitGroup)
@@ -46,8 +46,6 @@ func main() {
 			log.Printf("failed to schedule task %d: %v", i, err)
 		}
 	}
-
-	log.Println("Deployed workers:", wp.TotalWorkers())
 
 	// Wait for all tasks to complete
 	wg.Wait()
