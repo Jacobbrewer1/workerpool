@@ -247,12 +247,24 @@ func (p *Parser) packageInterfaces(
 			continue
 		}
 
-		typ, ok := obj.Type().(*types.Named)
+		var typ *types.Named
+		var name string
+
+		ttyp := obj.Type()
+
+		if talias, ok := obj.Type().(*types.Alias); ok {
+			name = talias.Obj().Name()
+			ttyp = types.Unalias(obj.Type())
+		}
+
+		typ, ok := ttyp.(*types.Named)
 		if !ok {
 			continue
 		}
 
-		name = typ.Obj().Name()
+		if name == "" {
+			name = typ.Obj().Name()
+		}
 
 		if typ.Obj().Pkg() == nil {
 			continue
@@ -358,6 +370,7 @@ func (nv *NodeVisitor) DeclaredInterfaces() []string {
 func (nv *NodeVisitor) add(ctx context.Context, n *ast.TypeSpec) {
 	log := zerolog.Ctx(ctx)
 	log.Debug().
+		Str("node-name", n.Name.Name).
 		Str("node-type", fmt.Sprintf("%T", n.Type)).
 		Msg("found node with acceptable type for mocking")
 	nv.declaredInterfaces = append(nv.declaredInterfaces, n.Name.Name)
@@ -379,10 +392,10 @@ func (nv *NodeVisitor) Visit(node ast.Node) ast.Visitor {
 				break
 			}
 			nv.add(nv.ctx, n)
-		case *ast.InterfaceType, *ast.IndexExpr:
+		case *ast.InterfaceType, *ast.IndexExpr, *ast.IndexListExpr, *ast.SelectorExpr, *ast.Ident:
 			nv.add(nv.ctx, n)
 		default:
-			log.Debug().Msg("Found node with unacceptable type for mocking. Rejecting.")
+			log.Debug().Msg("found node with unacceptable type for mocking. Rejecting.")
 		}
 	}
 	return nv
