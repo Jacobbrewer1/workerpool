@@ -36,6 +36,8 @@ type pool struct {
 
 	mut *sync.RWMutex
 
+	metricsHandler *asyncMetricHandler
+
 	// done is the channel to signal the worker pool to stop.
 	done chan struct{}
 
@@ -68,6 +70,7 @@ func New(opts ...WorkerOption) Pool {
 	p := &pool{
 		totalWorkers:   runtime.NumCPU(),
 		maxQueueLength: runtime.NumCPU() * 1000,
+		metricsHandler: newAsyncMetricHandler(),
 		wg:             new(sync.WaitGroup),
 		done:           make(chan struct{}),
 		delayedStart:   false,
