@@ -21,7 +21,7 @@ func (p *pool) start() {
 	}
 
 	p.setStarted(true)
-	idleWorkers.Set(float64(p.totalWorkers))
+	p.metricsHandler.setIdleWorkers(float64(p.totalWorkers))
 	for range p.totalWorkers {
 		p.wg.Add(1)
 		go p.deployWorker()
@@ -49,15 +49,15 @@ func (p *pool) deployWorker() {
 // runTask runs the task. It increments the active workers and decrements the idle workers when the task is running.
 // It also updates the pending tasks metric.
 func (p *pool) runTask(task Runnable) {
-	idleWorkers.Dec()
-	activeWorkers.Inc()
+	p.metricsHandler.decIdleWorkers()
+	p.metricsHandler.incActiveWorkers()
 	defer func() {
-		idleWorkers.Inc()
-		activeWorkers.Dec()
+		p.metricsHandler.incIdleWorkers()
+		p.metricsHandler.decActiveWorkers()
 	}()
 
-	pendingTasks.Set(float64(len(p.tasks)))
-	defer pendingTasks.Set(float64(len(p.tasks)))
+	p.metricsHandler.setPendingTasks(float64(len(p.tasks)))
+	defer p.metricsHandler.setPendingTasks(float64(len(p.tasks)))
 
 	t := prometheus.NewTimer(taskDuration)
 	defer t.ObserveDuration()
@@ -70,9 +70,9 @@ func (p *pool) runTask(task Runnable) {
 // Note: This is a blocking operation. It will wait for all the workers to finish executing the tasks.
 func (p *pool) Stop() {
 	defer func() {
-		idleWorkers.Set(0)
-		activeWorkers.Set(0)
-		pendingTasks.Set(0)
+		p.metricsHandler.setIdleWorkers(0)
+		p.metricsHandler.setActiveWorkers(0)
+		p.metricsHandler.setPendingTasks(0)
 
 		p.setStarted(false)
 	}()
