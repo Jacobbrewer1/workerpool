@@ -3,7 +3,7 @@ module github.com/jacobbrewer1/workerpool
 go 1.23
 
 require (
-	github.com/prometheus/client_golang v1.21.0
+	github.com/prometheus/client_golang v1.21.1
 	github.com/stretchr/testify v1.10.0
 	github.com/vektra/mockery/v2 v2.49.1
 )
