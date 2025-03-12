@@ -38,6 +38,7 @@ func (p *pool) deployWorker() {
 			return
 		case task, ok := <-p.tasks:
 			if !ok {
+				// The tasks channel is closed
 				return
 			}
 
