@@ -27,7 +27,7 @@ func main() {
 
 	// Schedule some tasks
 	wg := new(sync.WaitGroup)
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		wg.Add(1)
 		t := &task{
 			id: i,
