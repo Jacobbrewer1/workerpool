@@ -37,6 +37,8 @@ type pool struct {
 	// mut is the mutex to protect the started flag.
 	mut *sync.RWMutex
 
+	metricsHandler *asyncMetricHandler
+
 	// done is the channel to signal the worker pool to stop.
 	done chan struct{}
 
@@ -69,6 +71,7 @@ func New(opts ...WorkerOption) Pool {
 	p := &pool{
 		totalWorkers:   runtime.NumCPU(),
 		maxQueueLength: runtime.NumCPU() * 1000,
+		metricsHandler: newAsyncMetricHandler(),
 		wg:             new(sync.WaitGroup),
 		mut:            new(sync.RWMutex),
 		done:           make(chan struct{}),
