@@ -425,7 +425,7 @@ func (g *Generator) GeneratePrologue(ctx context.Context, pkg string) {
 
 	if !g.config.Issue845Fix {
 		logging.WarnDeprecated(
-			ctx,
+			"issue-845-fix",
 			"issue-845-fix must be set to True to remove this warning. Visit the link for more details.",
 			map[string]any{
 				"url": logging.DocsURL("/deprecations/#issue-845-fix"),
@@ -540,13 +540,6 @@ func (g *Generator) renderType(ctx context.Context, typ types.Type) string {
 	case *types.Alias:
 		log.Debug().Msg("found type alias")
 		if g.config.ResolveTypeAlias {
-			logging.WarnDeprecated(
-				ctx,
-				"resolve-type-alias will be permanently set to False in v3. Please modify your config to set the parameter to False.",
-				map[string]any{
-					"url": logging.DocsURL("/deprecations/#resolve-type-alias"),
-				},
-			)
 			return g.renderType(ctx, t.Rhs())
 		}
 		log.Debug().Msg("not resolving type alias to underlying type")
@@ -855,7 +848,11 @@ func (g *Generator) generateMethod(ctx context.Context, method *Method) {
 	}
 
 	g.printTemplate(data, `
+{{- if gt (len .Params.Names) 0}}
 // {{.FunctionName}} provides a mock function with given fields: {{join .Params.Names ", "}}
+{{- else}}
+// {{.FunctionName}} provides a mock function with no fields
+{{- end}}
 func (_m *{{.MockName}}{{.InstantiatedTypeString}}) {{.FunctionName}}({{join .Params.Params ", "}}) {{if (gt (len .Returns.Types) 1)}}({{end}}{{join .Returns.Types ", "}}{{if (gt (len .Returns.Types) 1)}}){{end}} {
 {{- .Preamble -}}
 {{- if not .Returns.Types}}
@@ -1009,7 +1006,11 @@ func (_c *{{.CallStruct}}{{ .InstantiatedTypeString }}) Return({{range .Returns.
 }
 
 func (_c *{{.CallStruct}}{{ .InstantiatedTypeString }}) RunAndReturn(run func({{range .Params.Types}}{{.}},{{end}})({{range .Returns.Types}}{{.}},{{end}})) *{{.CallStruct}}{{ .InstantiatedTypeString }} {
+{{- if not .Returns.Types}}
+	_c.Run(run)
+{{- else}}
 	_c.Call.Return(run)
+{{- end}}
 	return _c
 }
 `)
